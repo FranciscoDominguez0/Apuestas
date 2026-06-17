@@ -36,6 +36,20 @@
         let bovedaSupremaTotal = 0; 
         let tempApuesta = null;
 
+        // Configuración Global para Modales Pequeños (Toasts)
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            background: '#1e293b',
+            color: '#fff',
+            customClass: {
+                popup: 'text-sm rounded-xl border border-slate-700 shadow-xl'
+            }
+        });
+
         document.addEventListener("DOMContentLoaded", () => {
             crearEfectosMundialistas(); 
             actualizarNavegacion();
@@ -134,7 +148,7 @@
             const eq2 = document.getElementById('config-eq2').value.trim().toUpperCase();
 
             if(!eq1 || !eq2) { 
-                Swal.fire({ icon: 'error', title: 'Faltan Datos', text: 'Ingresa el nombre de los países.' });
+                Toast.fire({ icon: 'warning', title: 'Ingresa los países' });
                 return; 
             }
 
@@ -149,9 +163,9 @@
                 document.getElementById('config-eq1').value = "";
                 document.getElementById('config-eq2').value = "";
                 await cargarDatosDelServidor();
-                Swal.fire({ icon: 'success', title: '¡Partido Creado!', text: `✅ PARTIDO ESTELAR CREADO: ${eq1} vs ${eq2}.\nLa taquilla está abierta para recibir boletos.` });
+                Toast.fire({ icon: 'success', title: `Torneo Creado: ${eq1} vs ${eq2}` });
             } else {
-                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                Toast.fire({ icon: 'error', title: data.message });
             }
         }
 
@@ -177,7 +191,7 @@
                     body: JSON.stringify({ id: partidoId })
                 });
                 await cargarDatosDelServidor();
-                Swal.fire({ icon: 'success', title: '¡Balón rodando!', text: 'El partido ha comenzado y las apuestas se cerraron.' });
+                Toast.fire({ icon: 'success', title: 'Balón rodando ⚽' });
             }
         }
 
@@ -187,7 +201,7 @@
 
             const pendientes = dbTickets.filter(t => t.partidoId === partidoId && !t.aprobado);
             if(pendientes.length > 0) {
-                Swal.fire({ icon: 'warning', title: 'Taquilla Pendiente', text: '⚠️ Hay hinchas esperando aprobación. Acéptalos o recházalos antes de pitar el final.' });
+                Toast.fire({ icon: 'warning', title: 'Hay boletos pendientes de pago' });
                 return;
             }
 
@@ -213,9 +227,9 @@
                 const data = await res.json();
                 if(data.success) {
                     await cargarDatosDelServidor();
-                    Swal.fire({ icon: 'success', title: 'Partido Finalizado', text: 'Se ha declarado el ganador y calculado los premios.' });
+                    Toast.fire({ icon: 'success', title: 'Partido Finalizado' });
                 } else {
-                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
+                    Toast.fire({ icon: 'error', title: data.message });
                 }
             }
         }
@@ -239,7 +253,7 @@
                 await cargarDatosDelServidor();
                 iniciarSesionExitosa();
             } else {
-                Swal.fire({ icon: 'error', title: 'Error de Registro', text: data.message });
+                Toast.fire({ icon: 'error', title: data.message });
             }
         }
 
@@ -261,7 +275,7 @@
                 await cargarDatosDelServidor();
                 iniciarSesionExitosa();
             } else { 
-                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: data.message });
+                Toast.fire({ icon: 'error', title: data.message });
             }
         }
 
@@ -349,7 +363,7 @@
                 cerrarModalPassword(); 
                 cambiarModulo('admin');
             } else {
-                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: data.message });
+                Toast.fire({ icon: 'error', title: data.message });
                 document.getElementById('admin-pass-input').value = "";
                 document.getElementById('admin-pass-input').focus();
             }
@@ -450,7 +464,7 @@
             const monto = parseFloat(document.getElementById('c-monto').value);
 
             if(!partidoId || !prediccion) { 
-                Swal.fire({ icon: 'warning', title: 'Ticket Incompleto', text: 'Selecciona un partido y quién gana.' });
+                Toast.fire({ icon: 'warning', title: 'Falta selección' });
                 return; 
             }
             
@@ -490,7 +504,7 @@
                 document.getElementById('modal-exito-apuesta').classList.remove('hidden');
                 renderizarTicketsCliente(); 
             } else {
-                Swal.fire({ icon: 'error', title: 'Error al crear ticket', text: data.message });
+                Toast.fire({ icon: 'error', title: data.message });
                 cerrarModalPago();
             }
         }
@@ -755,7 +769,7 @@
                     body: JSON.stringify({ id })
                 });
                 await cargarDatosDelServidor();
-                Swal.fire({ icon: 'success', title: 'Boleto Eliminado', timer: 1500, showConfirmButton: false });
+                Toast.fire({ icon: 'success', title: 'Eliminado' });
             }
         }
 
@@ -778,7 +792,7 @@
                     body: JSON.stringify({ id: idTicket })
                 });
                 await cargarDatosDelServidor();
-                Swal.fire({ icon: 'success', title: '¡Pago Confirmado!', text: 'El premio ha sido marcado como pagado exitosamente.' });
+                Toast.fire({ icon: 'success', title: 'Pago Confirmado' });
             }
         }
 
@@ -800,14 +814,14 @@
             const telefono = document.getElementById('reclamo-telefono').value.trim();
 
             if (cedulaIngresada !== cedulaOriginal) {
-                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'La cédula no coincide con el dueño del boleto.' });
+                Toast.fire({ icon: 'error', title: 'Cédula incorrecta' });
                 return;
             }
 
             const ticket = dbTickets.find(t => t.id === idTicket);
             if (ticket) {
                 if (ticket.reclamado) {
-                    Swal.fire({ icon: 'warning', title: 'Solicitud en Progreso', text: 'Ya mandaste esta solicitud, tranquilo que el árbitro la está revisando.' });
+                    Toast.fire({ icon: 'warning', title: 'Reclamo en proceso' });
                     return;
                 }
                 
@@ -819,6 +833,6 @@
             }
 
             cerrarModalReclamo();
-            Swal.fire({ icon: 'success', title: '¡Solicitud Enviada!', text: `Estate atento al WhatsApp (${telefono}), te mandaremos tus ganancias. 💸` });
+            Toast.fire({ icon: 'success', title: '¡Solicitud Enviada!' });
             await cargarDatosDelServidor();
         }
