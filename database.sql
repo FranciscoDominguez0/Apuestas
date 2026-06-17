@@ -49,4 +49,4 @@ CREATE TABLE IF NOT EXISTS administradores (
 );
 
 -- Insertar administrador por defecto
-INSERT INTO administradores (usuario, clave) VALUES ('admin', 'admin123');
+INSERT INTO administradores (usuario, clave) VALUES ('Administrador', 'Panama26');

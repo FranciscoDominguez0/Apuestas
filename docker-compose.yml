@@ -8,8 +8,8 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=12345678
+      - DB_USER=Administrador
+      - DB_PASSWORD=Panama26
       - DB_NAME=sistema_apuestas
     depends_on:
       db:
@@ -19,7 +19,9 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=12345678
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+      - MYSQL_USER=Administrador
+      - MYSQL_PASSWORD=Panama26
       - MYSQL_DATABASE=sistema_apuestas
     ports:
       - "3307:3306" # Expuesto al exterior en el puerto 3307 por seguridad (Workbench/DBeaver)
@@ -27,7 +29,7 @@ services:
       - db_data:/var/lib/mysql
       - ./database.sql:/docker-entrypoint-initdb.d/init.sql # Auto-inicializa las tablas
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p12345678"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uAdministrador", "-pPanama26"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,8 +41,8 @@ services:
       - "8080:80" # Panel en el puerto 8080
     environment:
       - PMA_HOST=db
-      - PMA_USER=root
-      - PMA_PASSWORD=12345678
+      - PMA_USER=Administrador
+      - PMA_PASSWORD=Panama26
     depends_on:
       - db
 
