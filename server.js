@@ -52,6 +52,42 @@ async function initDB() {
 initDB();
 
 // =======================
+// SEGURIDAD ANTI-FUERZA BRUTA
+// =======================
+
+const loginAttempts = {};
+
+function rateLimiter(req, res, next) {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    
+    if (loginAttempts[ip] && loginAttempts[ip].lockUntil > now) {
+        const remaining = Math.ceil((loginAttempts[ip].lockUntil - now) / 1000 / 60);
+        return res.json({ success: false, message: `Demasiados intentos fallidos. Por seguridad, tu IP ha sido bloqueada. Intenta de nuevo en ${remaining} minutos.` });
+    }
+    next();
+}
+
+function recordFailedLogin(ip) {
+    const now = Date.now();
+    if (!loginAttempts[ip] || loginAttempts[ip].lockUntil < now) {
+        loginAttempts[ip] = { count: 1, lockUntil: 0 };
+    } else {
+        loginAttempts[ip].count += 1;
+        if (loginAttempts[ip].count >= 4) {
+            loginAttempts[ip].lockUntil = now + 3 * 60 * 1000; // Bloqueo de 3 minutos
+        }
+    }
+}
+
+function resetLogin(ip) {
+    if (loginAttempts[ip]) {
+        loginAttempts[ip].count = 0;
+        loginAttempts[ip].lockUntil = 0;
+    }
+}
+
+// =======================
 // RUTAS DE AUTENTICACIÓN
 // =======================
 
@@ -69,32 +105,38 @@ app.post('/api/auth/register', async (req, res) => {
     } catch (e) { res.json({ success: false, message: e.message }); }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', rateLimiter, async (req, res) => {
     try {
+        const ip = req.ip || req.connection.remoteAddress;
         const { cedula, password } = req.body;
         const [rows] = await pool.query("SELECT nombre, cedula, password FROM usuarios WHERE cedula = ?", [cedula]);
         
         if (rows.length > 0) {
             const valid = await bcrypt.compare(password, rows[0].password);
             if (valid) {
+                resetLogin(ip);
                 return res.json({ success: true, user: { nombre: rows[0].nombre, cedula: rows[0].cedula } });
             }
         }
+        recordFailedLogin(ip);
         res.json({ success: false, message: 'Credenciales incorrectas' });
     } catch (e) { res.json({ success: false, message: e.message }); }
 });
 
-app.post('/api/auth/admin', async (req, res) => {
+app.post('/api/auth/admin', rateLimiter, async (req, res) => {
     try {
+        const ip = req.ip || req.connection.remoteAddress;
         const { usuario, clave } = req.body;
         const [rows] = await pool.query("SELECT usuario, clave FROM administradores WHERE usuario = ?", [usuario]);
         
         if (rows.length > 0) {
             const valid = await bcrypt.compare(clave, rows[0].clave);
             if (valid) {
+                resetLogin(ip);
                 return res.json({ success: true, admin: rows[0].usuario });
             }
         }
+        recordFailedLogin(ip);
         res.json({ success: false, message: 'Credenciales de administrador incorrectas' });
     } catch (e) { res.json({ success: false, message: e.message }); }
 });
