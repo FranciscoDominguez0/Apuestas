@@ -38,11 +38,9 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     ports:
-      - "127.0.0.1:8080:80" # Restringido a localhost (Seguridad)
+      - "8080:80" # Abierto para la red Wi-Fi local
     environment:
       - PMA_HOST=db
-      - PMA_USER=Administrador
-      - PMA_PASSWORD=Panama26
     depends_on:
       - db
 
