@@ -133,7 +133,10 @@
             const eq1 = document.getElementById('config-eq1').value.trim().toUpperCase();
             const eq2 = document.getElementById('config-eq2').value.trim().toUpperCase();
 
-            if(!eq1 || !eq2) { alert("❌ Ingresa el nombre de los países."); return; }
+            if(!eq1 || !eq2) { 
+                Swal.fire({ icon: 'error', title: 'Faltan Datos', text: 'Ingresa el nombre de los países.' });
+                return; 
+            }
 
             const response = await fetch(`${BASE_URL}/api/partidos/create`, {
                 method: 'POST',
@@ -146,9 +149,9 @@
                 document.getElementById('config-eq1').value = "";
                 document.getElementById('config-eq2').value = "";
                 await cargarDatosDelServidor();
-                alert(`✅ PARTIDO ESTELAR CREADO: ${eq1} vs ${eq2}.\nLa taquilla está abierta para recibir boletos.`);
+                Swal.fire({ icon: 'success', title: '¡Partido Creado!', text: `✅ PARTIDO ESTELAR CREADO: ${eq1} vs ${eq2}.\nLa taquilla está abierta para recibir boletos.` });
             } else {
-                alert("Error: " + data.message);
+                Swal.fire({ icon: 'error', title: 'Error', text: data.message });
             }
         }
 
@@ -156,13 +159,25 @@
             const partido = dbPartidos.find(p => p.id === partidoId);
             if(!partido) return;
 
-            if(confirm(`⏱️ ¿Iniciar partido ${partido.eq1} vs ${partido.eq2}?\n\nLa taquilla se cerrará y los clientes ya no podrán apostar.`)) {
+            const result = await Swal.fire({
+                title: `¿Iniciar ${partido.eq1} vs ${partido.eq2}?`,
+                text: "La taquilla se cerrará y los clientes ya no podrán apostar.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, Pitar Inicio ⏱️',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if(result.isConfirmed) {
                 await fetch(`${BASE_URL}/api/partidos/start`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: partidoId })
                 });
                 await cargarDatosDelServidor();
+                Swal.fire({ icon: 'success', title: '¡Balón rodando!', text: 'El partido ha comenzado y las apuestas se cerraron.' });
             }
         }
 
@@ -172,13 +187,24 @@
 
             const pendientes = dbTickets.filter(t => t.partidoId === partidoId && !t.aprobado);
             if(pendientes.length > 0) {
-                alert("⚠️ Hay hinchas esperando aprobación. Acéptalos o recházalos antes de pitar el final.");
+                Swal.fire({ icon: 'warning', title: 'Taquilla Pendiente', text: '⚠️ Hay hinchas esperando aprobación. Acéptalos o recházalos antes de pitar el final.' });
                 return;
             }
 
             const nombreGanador = ganadorCodigo === 'EQ1' ? partido.eq1 : (ganadorCodigo === 'EMP' ? 'EMPATE' : partido.eq2);
 
-            if(confirm(`ATENCIÓN: ¿Pitar el final del partido y declarar a ${nombreGanador} como ganador oficial?`)) {
+            const result = await Swal.fire({
+                title: '¿Pitar el final del partido?',
+                text: `Vas a declarar a ${nombreGanador} como ganador oficial.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, Declarar Ganador 🏁',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if(result.isConfirmed) {
                 const res = await fetch(`${BASE_URL}/api/partidos/finish`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -187,8 +213,9 @@
                 const data = await res.json();
                 if(data.success) {
                     await cargarDatosDelServidor();
+                    Swal.fire({ icon: 'success', title: 'Partido Finalizado', text: 'Se ha declarado el ganador y calculado los premios.' });
                 } else {
-                    alert("Error: " + data.message);
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.message });
                 }
             }
         }
@@ -212,7 +239,7 @@
                 await cargarDatosDelServidor();
                 iniciarSesionExitosa();
             } else {
-                alert("❌ " + data.message);
+                Swal.fire({ icon: 'error', title: 'Error de Registro', text: data.message });
             }
         }
 
@@ -234,7 +261,7 @@
                 await cargarDatosDelServidor();
                 iniciarSesionExitosa();
             } else { 
-                alert("❌ " + data.message); 
+                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: data.message });
             }
         }
 
@@ -322,7 +349,7 @@
                 cerrarModalPassword(); 
                 cambiarModulo('admin');
             } else {
-                alert("❌ " + data.message);
+                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: data.message });
                 document.getElementById('admin-pass-input').value = "";
                 document.getElementById('admin-pass-input').focus();
             }
@@ -422,7 +449,10 @@
             const prediccion = document.getElementById('prediccion-seleccionada').value;
             const monto = parseFloat(document.getElementById('c-monto').value);
 
-            if(!partidoId || !prediccion) { alert("Selecciona un partido y quién gana."); return; }
+            if(!partidoId || !prediccion) { 
+                Swal.fire({ icon: 'warning', title: 'Ticket Incompleto', text: 'Selecciona un partido y quién gana.' });
+                return; 
+            }
             
             tempApuesta = {
                 partidoId: partidoId,
@@ -460,7 +490,7 @@
                 document.getElementById('modal-exito-apuesta').classList.remove('hidden');
                 renderizarTicketsCliente(); 
             } else {
-                alert("Error creando ticket: " + data.message);
+                Swal.fire({ icon: 'error', title: 'Error al crear ticket', text: data.message });
                 cerrarModalPago();
             }
         }
@@ -707,24 +737,48 @@
         }
 
         async function rechazarApuesta(id) {
-            if(confirm("¿Estás seguro de sacar la Tarjeta Roja y eliminar este boleto?")) {
+            const result = await Swal.fire({
+                title: '¿Sacar Tarjeta Roja?',
+                text: '¿Estás seguro de eliminar este boleto permanentemente?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, Eliminar ❌',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if(result.isConfirmed) {
                 await fetch(`${BASE_URL}/api/tickets/reject`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id })
                 });
                 await cargarDatosDelServidor();
+                Swal.fire({ icon: 'success', title: 'Boleto Eliminado', timer: 1500, showConfirmButton: false });
             }
         }
 
         async function marcarPagado(idTicket) {
-            if(confirm("¿Confirmas que la transferencia fue exitosa para este ganador?")) {
+            const result = await Swal.fire({
+                title: '¿Confirmar Pago?',
+                text: '¿Confirmas que la transferencia fue exitosa para este ganador?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, Marcar Pagado 💸',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if(result.isConfirmed) {
                 await fetch(`${BASE_URL}/api/tickets/pay`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: idTicket })
                 });
                 await cargarDatosDelServidor();
+                Swal.fire({ icon: 'success', title: '¡Pago Confirmado!', text: 'El premio ha sido marcado como pagado exitosamente.' });
             }
         }
 
@@ -746,14 +800,15 @@
             const telefono = document.getElementById('reclamo-telefono').value.trim();
 
             if (cedulaIngresada !== cedulaOriginal) {
-                alert("❌ ACCESO DENEGADO.\nLa cédula no coincide con el dueño del boleto.");
+                Swal.fire({ icon: 'error', title: 'Acceso Denegado', text: 'La cédula no coincide con el dueño del boleto.' });
                 return;
             }
 
             const ticket = dbTickets.find(t => t.id === idTicket);
             if (ticket) {
                 if (ticket.reclamado) {
-                    alert("⚠️ Ya mandaste esta solicitud, tranquilo que el árbitro la está revisando."); return;
+                    Swal.fire({ icon: 'warning', title: 'Solicitud en Progreso', text: 'Ya mandaste esta solicitud, tranquilo que el árbitro la está revisando.' });
+                    return;
                 }
                 
                 await fetch(`${BASE_URL}/api/tickets/claim`, {
@@ -764,6 +819,6 @@
             }
 
             cerrarModalReclamo();
-            alert(`✅ ¡SOLICITUD ENVIADA!\n\nEstate atento al WhatsApp (${telefono}), te mandaremos tus ganancias. 💸`);
+            Swal.fire({ icon: 'success', title: '¡Solicitud Enviada!', text: `Estate atento al WhatsApp (${telefono}), te mandaremos tus ganancias. 💸` });
             await cargarDatosDelServidor();
         }
