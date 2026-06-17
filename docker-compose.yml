@@ -38,7 +38,7 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     ports:
-      - "8080:80" # Panel en el puerto 8080
+      - "127.0.0.1:8080:80" # Restringido a localhost (Seguridad)
     environment:
       - PMA_HOST=db
       - PMA_USER=Administrador
