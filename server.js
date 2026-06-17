@@ -8,6 +8,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Ruta principal para no tener que escribir /Apuestas.html
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/Apuestas.html');
+});
+
 // Configuración de la base de datos
 const dbConfig = {
     host: process.env.DB_HOST || '127.0.0.1',
